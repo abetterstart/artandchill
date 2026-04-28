@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Art and Chill — Swipe Through World-Class Art from The Met & Art Institute of Chicago</title>
+  <meta name="description" content="A TikTok-style art discovery app. Swipe through paintings, sculptures and masterpieces from The Metropolitan Museum of Art and the Art Institute of Chicago. Free, no account needed.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Art and Chill — Swipe Through World-Class Art">
+  <meta property="og:description" content="A TikTok-style art discovery app. Swipe through paintings, sculptures and masterpieces from The Met and the Art Institute of Chicago. Free, no account needed.">
+  <meta property="og:image" content="https://artandchill.org/og-image.png">
+  <meta property="og:url" content="https://artandchill.org/">
+
+  <!-- Twitter/X card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Art and Chill — Swipe Through World-Class Art">
+  <meta name="twitter:description" content="A TikTok-style art discovery app. Swipe through paintings, sculptures and masterpieces from The Met and the Art Institute of Chicago.">
+  <meta name="twitter:image" content="https://artandchill.org/og-image.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Art and Chill">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Art and Chill">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Content warning ────────────────────────────── */
+    #warning {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 32px;
+      transition: opacity 0.6s ease;
+    }
+    #warning.fade { opacity: 0; pointer-events: none; }
+    .warning-icon { font-size: 28px; margin-bottom: 16px; }
+    .warning-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    .warning-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      text-align: center;
+      max-width: 300px;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+    .warning-btn {
+      padding: 12px 28px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 24px;
+      color: #fff;
+      font-size: 13px;
+      font-family: inherit;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .warning-btn:hover {
+      background: rgba(255,255,255,0.18);
+      border-color: rgba(255,255,255,0.4);
+    }
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: opacity 0.6s ease;
+    }
+    #loading.fade { opacity: 0; pointer-events: none; }
+    .loading-logo-img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      animation: logoPulse 2s ease-in-out infinite;
+    }
+    @keyframes logoPulse {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+    .loading-logo {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .loading-sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 1px;
+    }
+    .loading-bar {
+      width: 120px;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      margin-top: 24px;
+      overflow: hidden;
+    }
+    .loading-bar-inner {
+      height: 100%;
+      background: rgba(255,255,255,0.6);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Slide container ─────────────────────────────── */
+    #stage {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 90vh;
+      height: 90dvh;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+      transition: transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      will-change: transform;
+    }
+    .slide.above  { transform: translateY(-100%); }
+    .slide.active { transform: translateY(0); }
+    .slide.below  { transform: translateY(100%); }
+
+    .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    /* ── Gradient overlays ───────────────────────────── */
+    .grad-top {
+      display: none;
+    }
+    .grad-bottom {
+      display: none;
+    }
+
+    /* ── Top bar ─────────────────────────────────────── */
+    #topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      padding: 18px 16px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .logo {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ── Museum link button ──────────────────────────── */
+    #museum-link {
+      position: fixed;
+      bottom: 18px;
+      left: 16px;
+      z-index: 10;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+      font-family: inherit;
+    }
+    #museum-link:hover {
+      background: rgba(255,255,255,0.22);
+      color: #fff;
+    }
+
+
+    /* ── Progress bar ────────────────────────────────── */
+    #progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.6);
+      z-index: 20;
+      transition: width 0.3s ease;
+    }
+
+    /* ── Counter ─────────────────────────────────────── */
+    #counter {
+      display: none;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: rgba(255,255,255,0.3);
+      z-index: 12;
+      letter-spacing: 1px;
+    }
+
+    /* ── Info panel ───────────────────────────────────── */
+    #info {
+      position: fixed;
+      top: 90vh;
+      top: 90dvh;
+      left: 0;
+      right: 0;
+      height: 10vh;
+      height: 10dvh;
+      padding: 8px 16px 0;
+      background: #000;
+      z-index: 10;
+      overflow: hidden;
+    }
+    #info .badge {
+      display: none;
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 6px;
+    }
+    #info .art-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    #info .art-artist {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 3px;
+    }
+    #info .art-dept {
+      display: none;
+      color: rgba(255,255,255,0.35);
+    }
+    #info .art-medium {
+      display: none;
+    }
+
+    /* ── Met link ────────────────────────────────────── */
+    #metlink {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 18px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      z-index: 12;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+    }
+    #metlink:hover { color: rgba(255,255,255,0.7); }
+
+    /* ── Bottom buttons ────────────────────────────────── */
+    #bottom-buttons {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 12;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #bottom-buttons a, #bottom-buttons button {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 10px;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+      font-family: inherit;
+    }
+    #bottom-buttons a:hover, #bottom-buttons button:hover {
+      background: rgba(255,255,255,0.22);
+      color: #fff;
+    }
+
+    /* ── Slideshow active state ───────────────────────── */
+    #slideshow-btn.active {
+      background: rgba(255,255,255,0.25);
+      color: #fff;
+    }
+
+    /* ── Share menu ────────────────────────────────────── */
+    #share-menu {
+      display: none;
+      position: fixed;
+      bottom: 42px;
+      right: 16px;
+      z-index: 30;
+      background: rgba(22,22,22,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 6px 0;
+      min-width: 180px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    #share-menu.open { display: block; }
+    .share-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.8);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+      border: none;
+      background: none;
+      width: 100%;
+      font-family: inherit;
+      letter-spacing: 0.3px;
+    }
+    .share-option:hover { background: rgba(255,255,255,0.08); }
+    .share-icon { font-size: 14px; width: 20px; text-align: center; }
+    .share-toast {
+      position: fixed;
+      bottom: calc(10vh + 10px);
+      bottom: calc(10dvh + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: #fff;
+      font-size: 11px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 40;
+    }
+    .share-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+
+    #errbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0a0a0a;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      gap: 12px;
+    }
+    #errbox p { color: rgba(255,255,255,0.5); font-size: 13px; text-align: center; max-width: 240px; line-height: 1.6; }
+    #errbox button { margin-top: 8px; padding: 10px 24px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; color: #fff; font-size: 13px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<!-- Content warning -->
+<div id="warning">
+  <div class="warning-icon">⚠️</div>
+  <div class="warning-title">Content Notice</div>
+  <div class="warning-text">
+    This app displays artwork from museum collections that may include nudity, violence and other mature themes.
+  </div>
+  <button class="warning-btn" id="warningBtn">I understand, continue</button>
+</div>
+
+<!-- Loading -->
+<div id="loading" style="display:none">
+  <img class="loading-logo-img" src="/og-image.png" alt="Art and Chill">
+  <div class="loading-logo">Art and Chill</div>
+  <div class="loading-sub">Opening the galleries</div>
+  <div class="loading-bar"><div class="loading-bar-inner" id="loadBar"></div></div>
+</div>
+
+<!-- Error fallback -->
+<div id="errbox">
+  <div style="font-size:32px">🎨</div>
+  <p>Couldn't reach the museum right now. Check your connection and try again.</p>
+  <button onclick="location.reload()">Try again</button>
+</div>
+
+<!-- Main stage -->
+<div id="stage"></div>
+
+<!-- Fixed UI -->
+<div id="progress"></div>
+<div id="info">
+  <div class="badge" id="badgeMuseum"></div>
+  <div class="art-title" id="infoTitle"></div>
+  <div class="art-artist" id="infoArtist"></div>
+  <div class="art-dept" id="infoDept"></div>
+  <div class="art-medium" id="infoMedium"></div>
+</div>
+
+<div id="counter"></div>
+
+<div id="share-menu">
+  <a class="share-option" id="share-email"><span class="share-icon">✉</span> Email</a>
+  <a class="share-option" id="share-x" target="_blank" rel="noopener"><span class="share-icon">𝕏</span> X / Twitter</a>
+  <a class="share-option" id="share-fb" target="_blank" rel="noopener"><span class="share-icon">f</span> Facebook</a>
+  <a class="share-option" id="share-wa" target="_blank" rel="noopener"><span class="share-icon">💬</span> WhatsApp</a>
+  <button class="share-option" id="share-copy"><span class="share-icon">🔗</span> Copy link</button>
+</div>
+<div class="share-toast" id="share-toast">Link copied!</div>
+
+<div id="bottom-buttons">
+  <a id="more-info-btn" href="#" target="_blank" rel="noopener">ℹ more info</a>
+  <button id="slideshow-btn" aria-label="Slideshow">▶</button>
+  <button id="share-btn" aria-label="Share">↗ share</button>
+  <a id="donate" href="https://paypal.me/abetterstart" target="_blank" rel="noopener">♡ donate</a>
+</div>
+
+<script>
+  const MET     = 'https://collectionapi.metmuseum.org/public/collection/v1';
+  const AIC     = 'https://api.artic.edu/api/v1/artworks';
+  const AIC_IMG = id => `https://www.artic.edu/iiif/2/${id}/full/843,/0/default.jpg`;
+  const AIC_FIELDS = 'id,title,artist_display,date_display,medium_display,image_id,department_title,dimensions,artwork_type_title';
+  const AIC_VISUAL = ['Painting','Drawing and Watercolor','Print','Photograph','Sculpture','Textile','Decorative Arts','Drawing','Watercolor','Miniature','Furniture'];
+  const MET_TERMS  = ['portrait','landscape','still life','flowers','figure','mythology','animals','interior'];
+
+  const BATCH   = 4;
+  const PRELOAD = 3;
+
+  let artworks   = [];
+  let metIds     = [];
+  let metCursor  = 0;
+  let aicPage    = 0;
+  let aicMax     = 800;
+  let fetching   = false;
+  let navigating = false;
+  let current    = 0;
+  let slides     = {};
+
+  const MET_EXCLUDE = ['terracotta','fragment','shard','potsherd','vessel','vase','amphora','kylix','lekythos','oinochoe','krater','askos','pyxis','hydria','kantharos','column','inscription','tile','brick','seal','stamp'];
+
+  function metIsVisual(o) {
+    const medium = (o.medium || '').toLowerCase();
+    const classification = (o.classification || '').toLowerCase();
+    const title = (o.title || '').toLowerCase();
+    return !MET_EXCLUDE.some(term => medium.includes(term) || classification.includes(term) || title.includes(term));
+  }
+  function fromMet(o) {
+    return {
+      src:    'met',
+      id:     o.objectID,
+      title:  o.title || 'Untitled',
+      artist: o.artistDisplayName || '',
+      date:   o.objectDate || '',
+      museum: '🏛  The Met, New York',
+      dept:   o.department || '',
+      medium: [o.medium, o.dimensions].filter(Boolean).join('  ·  '),
+      img:    o.primaryImageSmall || o.primaryImage,
+      url:    o.objectURL || '',
+    };
+  }
+  function fromAIC(o) {
+    return {
+      src:    'aic',
+      id:     o.id,
+      title:  o.title || 'Untitled',
+      artist: o.artist_display || '',
+      date:   o.date_display || '',
+      museum: '🏛  Art Institute of Chicago',
+      dept:   o.department_title || '',
+      medium: [o.medium_display, o.dimensions].filter(Boolean).join('  ·  '),
+      img:    AIC_IMG(o.image_id),
+      url:    `https://www.artic.edu/artworks/${o.id}`,
+    };
+  }
+
+  /* ── Boot ────────────────────────────────────────── */
+  async function boot() {
+    setBar(10);
+    try {
+      // No isHighlight — pick random window from thousands of results
+      const term = MET_TERMS[Math.floor(Math.random() * MET_TERMS.length)];
+      const res  = await fetch(`${MET}/search?hasImages=true&isPublicDomain=true&q=${encodeURIComponent(term)}`);
+      const data = await res.json();
+      setBar(25);
+      if (data.objectIDs?.length) {
+        const all   = data.objectIDs;
+        const start = Math.floor(Math.random() * Math.max(1, all.length - 400));
+        metIds = all.slice(start, start + 400).sort(() => Math.random() - 0.5);
+      }
+      aicPage = Math.floor(Math.random() * aicMax);
+      setBar(35);
+      await fillQueue(8);
+      if (artworks.length === 0) throw new Error('No artworks loaded');
+      setBar(100);
+      document.getElementById('loading').classList.add('fade');
+      setTimeout(() => document.getElementById('loading').style.display = 'none', 700);
+      renderSlide(0, 'active');
+      updateInfo();
+      preloadAhead();
+    } catch(e) {
+      console.error(e);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('errbox').style.display = 'flex';
+    }
+  }
+
+  function setBar(pct) {
+    document.getElementById('loadBar').style.width = pct + '%';
+  }
+
+  /* ── Fill queue from Met + AIC ───────────────────── */
+  async function fillQueue(n) {
+    if (fetching) return;
+    fetching = true;
+    let added = 0;
+    while (added < n) {
+      const useAIC = (metCursor >= metIds.length) || (artworks.length > 4 && Math.random() < 0.4);
+      if (useAIC) {
+        added += await fetchAIC(Math.min(2, n - added));
+      } else {
+        added += await fetchMet(Math.min(3, n - added));
+      }
+      // Break if both sources exhausted
+      if (metCursor >= metIds.length && added === 0) break;
+    }
+    fetching = false;
+  }
+
+  async function fetchMet(n) {
+    const slice = metIds.slice(metCursor, metCursor + n * 2);
+    metCursor += slice.length;
+    if (!slice.length) return 0;
+    let added = 0;
+    const results = await Promise.allSettled(
+      slice.map(id => fetch(`${MET}/objects/${id}`).then(r => r.json()))
+    );
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value.primaryImage && r.value.title && metIsVisual(r.value)) {
+        artworks.push(fromMet(r.value));
+        added++;
+        if (added >= n) break;
+      }
+    }
+    return added;
+  }
+
+  async function fetchAIC(n) {
+    try {
+      aicPage++;
+      if (aicPage > aicMax) aicPage = Math.floor(Math.random() * aicMax);
+      const res  = await fetch(`${AIC}?is_public_domain=true&fields=${AIC_FIELDS}&limit=${n * 3}&page=${aicPage}`);
+      const data = await res.json();
+      if (data.pagination?.total_pages) aicMax = data.pagination.total_pages;
+      let added = 0;
+      for (const o of (data.data || [])) {
+        if (o.image_id && o.title && AIC_VISUAL.includes(o.artwork_type_title)) {
+          artworks.push(fromAIC(o));
+          added++;
+          if (added >= n) break;
+        }
+      }
+      return added;
+    } catch(e) { return 0; }
+  }
+
+  /* ── Slides ──────────────────────────────────────── */
+  function buildSlide(idx) {
+    if (slides[idx]) return slides[idx];
+    const art = artworks[idx];
+    if (!art) return null;
+    const el  = document.createElement('div');
+    el.className = 'slide below';
+    el.innerHTML = '<div class="grad-top"></div><div class="grad-bottom"></div>';
+    const img = document.createElement('img');
+    img.src = art.img; img.alt = art.title; img.loading = 'lazy';
+    img.onload = () => { if (img.naturalHeight > img.naturalWidth * 1.1) el.classList.add('portrait'); };
+    el.insertBefore(img, el.firstChild);
+    document.getElementById('stage').appendChild(el);
+    slides[idx] = el;
+    return el;
+  }
+
+  function renderSlide(idx, pos) {
+    const el = buildSlide(idx);
+    if (el) el.className = `slide ${pos}`;
+  }
+
+  function preloadAhead() {
+    for (let i = 1; i <= PRELOAD; i++)
+      if (current + i < artworks.length) buildSlide(current + i);
+  }
+
+  /* ── Navigation ──────────────────────────────────── */
+  async function nextWork() {
+    if (navigating) return;
+    if (current >= artworks.length - 1) {
+      if (fetching) return;
+      await fillQueue(BATCH);
+    }
+    if (current >= artworks.length - 1) return;
+    navigating = true;
+    const from = current, to = current + 1;
+    buildSlide(to);
+    slides[to].className = 'slide below';
+    slides[to].getBoundingClientRect();
+    slides[from].className = 'slide above';
+    slides[to].className   = 'slide active';
+    current = to;
+    updateInfo();
+    preloadAhead();
+    if (current >= artworks.length - 3) fillQueue(BATCH);
+    if (current > 3 && slides[current - 3]) { slides[current - 3].remove(); delete slides[current - 3]; }
+    setTimeout(() => { navigating = false; }, 460);
+  }
+
+  function prevWork() {
+    if (navigating || current === 0) return;
+    navigating = true;
+    const from = current, to = current - 1;
+    buildSlide(to);
+    slides[to].className = 'slide above';
+    slides[to].getBoundingClientRect();
+    slides[from].className = 'slide below';
+    slides[to].className   = 'slide active';
+    current = to;
+    updateInfo();
+    setTimeout(() => { navigating = false; }, 460);
+  }
+
+  /* ── Info ────────────────────────────────────────── */
+  function updateInfo() {
+    const art = artworks[current];
+    if (!art) return;
+    document.getElementById('badgeMuseum').textContent = art.museum;
+    document.getElementById('infoTitle').textContent   = art.title;
+    document.getElementById('infoArtist').textContent  = [art.artist, art.date].filter(Boolean).join('  ·  ');
+    document.getElementById('infoDept').textContent    = art.dept;
+    document.getElementById('infoMedium').textContent  = art.medium;
+    document.getElementById('more-info-btn').href       = art.url || '#';
+    document.getElementById('counter').textContent     = (current + 1) + ' / ' + artworks.length;
+    document.getElementById('progress').style.width    = ((current + 1) / Math.max(artworks.length, 1) * 100) + '%';
+    // Update URL for deep linking
+    if (art.src && art.id) {
+      const param = `?${art.src}=${art.id}`;
+      history.replaceState(null, '', param);
+    }
+  }
+
+  /* ── Input ───────────────────────────────────────── */
+  let touchStartY = 0, touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; touchStartX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend',   e => {
+    const dy = touchStartY - e.changedTouches[0].clientY;
+    const dx = Math.abs(touchStartX - e.changedTouches[0].clientX);
+    if (Math.abs(dy) > 48 && dx < 60) { if (slideshowTimer) stopSlideshow(); dy > 0 ? nextWork() : prevWork(); }
+  }, { passive: true });
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowDown','ArrowRight','Space'].includes(e.code)) { e.preventDefault(); if (slideshowTimer) stopSlideshow(); nextWork(); }
+    if (['ArrowUp','ArrowLeft'].includes(e.code))            { e.preventDefault(); if (slideshowTimer) stopSlideshow(); prevWork(); }
+  });
+
+  let wheelCooldown = false;
+  document.addEventListener('wheel', e => {
+    if (wheelCooldown) return;
+    wheelCooldown = true;
+    setTimeout(() => wheelCooldown = false, 600);
+    if (slideshowTimer) stopSlideshow();
+    e.deltaY > 0 ? nextWork() : prevWork();
+  }, { passive: true });
+
+  /* ── Slideshow ─────────────────────────────────────── */
+  let slideshowTimer = null;
+
+  function startSlideshow() {
+    const btn = document.getElementById('slideshow-btn');
+    btn.classList.add('active');
+    btn.textContent = '⏸';
+    slideshowTimer = setInterval(() => {
+      if (!navigating) nextWork();
+    }, 6000);
+  }
+
+  function stopSlideshow() {
+    const btn = document.getElementById('slideshow-btn');
+    btn.classList.remove('active');
+    btn.textContent = '▶';
+    clearInterval(slideshowTimer);
+    slideshowTimer = null;
+  }
+
+  document.getElementById('slideshow-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (slideshowTimer) stopSlideshow();
+    else startSlideshow();
+  });
+
+  /* ── Share ────────────────────────────────────────── */
+  const SITE_URL = 'https://artandchill.org';
+  const SHARE_TEXT = 'Art and Chill — A TikTok-style art discovery app. Swipe through masterpieces from The Met and Art Institute of Chicago';
+
+  function getShareData() {
+    const art = artworks[current];
+    const artUrl = art?.src && art?.id ? `${SITE_URL}?${art.src}=${art.id}` : SITE_URL;
+    const text = art
+      ? `${SHARE_TEXT}\n\nCurrently viewing: "${art.title}"${art.artist ? ' by ' + art.artist : ''}`
+      : SHARE_TEXT;
+    return { title: 'Art and Chill', text, url: artUrl };
+  }
+
+  document.getElementById('share-btn').addEventListener('click', async (e) => {
+    e.stopPropagation();
+    // Use native share on mobile if available
+    if (navigator.share) {
+      try { await navigator.share(getShareData()); } catch(_) {}
+      return;
+    }
+    // Otherwise toggle the menu
+    document.getElementById('share-menu').classList.toggle('open');
+  });
+
+  // Close menu on outside click
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('share-menu');
+    if (menu.classList.contains('open') && !menu.contains(e.target) && e.target.id !== 'share-btn') {
+      menu.classList.remove('open');
+    }
+  });
+
+  document.getElementById('share-email').addEventListener('click', (e) => {
+    e.preventDefault();
+    const d = getShareData();
+    window.open(`mailto:?subject=${encodeURIComponent(d.title)}&body=${encodeURIComponent(d.text + '\n\n' + d.url)}`);
+    document.getElementById('share-menu').classList.remove('open');
+  });
+
+  document.getElementById('share-x').addEventListener('click', (e) => {
+    e.preventDefault();
+    const d = getShareData();
+    window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(d.text)}&url=${encodeURIComponent(d.url)}`, '_blank');
+    document.getElementById('share-menu').classList.remove('open');
+  });
+
+  document.getElementById('share-fb').addEventListener('click', (e) => {
+    e.preventDefault();
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(SITE_URL)}`, '_blank');
+    document.getElementById('share-menu').classList.remove('open');
+  });
+
+  document.getElementById('share-wa').addEventListener('click', (e) => {
+    e.preventDefault();
+    const d = getShareData();
+    window.open(`https://wa.me/?text=${encodeURIComponent(d.text + '\n\n' + d.url)}`, '_blank');
+    document.getElementById('share-menu').classList.remove('open');
+  });
+
+  document.getElementById('share-copy').addEventListener('click', () => {
+    navigator.clipboard.writeText(SITE_URL).then(() => {
+      const toast = document.getElementById('share-toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+    document.getElementById('share-menu').classList.remove('open');
+  });
+
+  if (localStorage.getItem('artandchill_warning_ok')) {
+    document.getElementById('warning').style.display = 'none';
+    document.getElementById('loading').style.display = 'flex';
+    boot();
+  } else {
+    document.getElementById('warningBtn').addEventListener('click', () => {
+      localStorage.setItem('artandchill_warning_ok', '1');
+      const warning = document.getElementById('warning');
+      const loading = document.getElementById('loading');
+      warning.classList.add('fade');
+      loading.style.display = 'flex';
+      setTimeout(() => { warning.style.display = 'none'; }, 600);
+      boot();
+    });
+  }
+</script>
+</body>
+</html>
